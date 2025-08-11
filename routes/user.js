@@ -1,7 +1,7 @@
 import express from "express";
 import bcrypt from "bcrypt";
 import User from "../models/user.js";
-
+import jwt from "jsonwebtoken"
 const router = express.Router();
 
 router.post("/register", async (req, res) => {
@@ -22,14 +22,21 @@ router.post("/register", async (req, res) => {
     });
   }
 
+
+
+
   const newUser = await User.create({
     firstName,
     email,
     password: hashPassword,
   });
+  const token =  jwt.sign({user:newUser._id},process.env.SECRET_KEY,{expiresIn:"1d"})
+
+
+
   return res.status(201).json({
     message: "User enter Successfully",
-    newUser,
+    newUser,token
   });
 });
 
@@ -43,24 +50,39 @@ router.post("/login", async (req, res) => {
   }
 
   const user = await User.findOne({ email });
-  
+
   if (!user) {
     return res.status(400).json({
       success: false,
       message: "Please enter a valid Email or Password",
     });
   }
-  
+
   const matchPassword = await bcrypt.compare(password, user.password);
-     if (!matchPassword) {
-      return res.status(401).json({
-        success: false,
-        message: "Invalid email or password",
-      });
-    }
+  if (!matchPassword) {
+    return res.status(401).json({
+      success: false,
+      message: "Invalid email or password",
+    });
+  }
+
+  const token = await jwt.sign({ userId: user._id }, process.env.SECRET_KEY, {
+    expiresIn: "1d",
+  });
+
   return res
     .status(201)
-    .json({ message: `User loggedIN successfully !!! Welcome back ${user.firstName}`, email, matchPassword });
+    .cookie("token", token, {
+      httpOnly: true,
+      sameSite: "strict",
+      maxAge: 24 * 60 * 60 * 1000,
+    })
+    .json({
+      message: `User loggedIN successfully !!! Welcome back ${user.firstName}`,
+      email,
+      matchPassword,
+      token,
+    });
 });
 
 export default router;
