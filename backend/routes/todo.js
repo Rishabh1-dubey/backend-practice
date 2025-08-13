@@ -21,13 +21,7 @@ router.post("/todos",isAuthenticated ,async (req, res) => {
 });
 
 router.get("/alltodos",isAuthenticated, async (req, res) => {
-  const { title, description } = req.body;
-
-  if (!title || !description) {
-    return res
-      .status(400)
-      .json({ success: false, message: "all fileds required" });
-  }
+ 
 
   const Alltodo = await Todo.find();
   return res
@@ -60,13 +54,7 @@ router.put("/edit-todo/:id",isAuthenticated, async (req, res) => {
 });
 
 router.delete("/delete-todo/:id", async (req, res) => {
-//   const { title, description } = req.body;
 
-//   if (!title || !description) {
-//     return res
-//       .status(400)
-//       .json({ message: false, message: "All fileds are mantedetory" });
-//   }
 
   const edittodo = await Todo.findById(req.params.id );
   if (!edittodo)
